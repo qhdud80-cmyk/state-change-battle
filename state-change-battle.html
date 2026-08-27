@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>상태변화 배틀 | 아이언맨 vs 학생</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg-panel: #111827;
+  --bg-panel-2: #1a2340;
+  --chalk: #e8edf5;
+  --chalk-dim: #7a8ba8;
+  --red: #e63946;
+  --red-dim: #6b1a1f;
+  --blue: #4cc9f0;
+  --blue-dim: #1a4a5c;
+  --gold: #ffd166;
+  --green: #06d6a0;
+  --purple: #b07cff;
+  --font-display: 'Do Hyeon', sans-serif;
+  --font-body: 'Noto Sans KR', sans-serif;
+  --radius: 16px;
+  --shadow: 0 8px 30px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--chalk);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(230,57,70,0.05) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(76,201,240,0.05) 0, transparent 40%);
+}
+
+#app {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 14px 40px;
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display);
+  font-weight: 400;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+button:active { transform: scale(0.97); }
+
+.btn-red {
+  background: var(--red);
+  color: #fff;
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  box-shadow: var(--shadow);
+}
+.btn-blue {
+  background: var(--blue);
+  color: #0a0e1a;
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  box-shadow: var(--shadow);
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--chalk);
+  border: 2px solid var(--chalk-dim);
+  padding: 12px 24px;
+}
+.btn-gold {
+  background: var(--gold);
+  color: #1a1000;
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  box-shadow: var(--shadow);
+}
+
+.screen { display: flex; flex-direction: column; gap: 16px; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.hidden { display: none !important; }
+
+.panel {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow { color: var(--chalk-dim); font-size: 0.82rem; letter-spacing: 1px; }
+
+#starfield {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+
+/* ========== START SCREEN ========== */
+.title-block { text-align: center; padding: 20px 0 8px; }
+.title-block h1 {
+  font-size: 2.2rem;
+  margin: 0 0 4px;
+  background: linear-gradient(135deg, var(--red), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.title-block p { color: var(--chalk-dim); margin: 0; font-size: 0.9rem; }
+
+.fighters-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin: 20px 0;
+}
+
+.fighter-preview {
+  text-align: center;
+  animation: float 3s ease-in-out infinite;
+}
+.fighter-preview:nth-child(3) { animation-delay: 0.5s; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.fighter-avatar {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  margin: 0 auto 8px;
+}
+
+.avatar-ironman {
+  background: radial-gradient(circle at 35% 35%, #ff4444, #8b0000);
+  box-shadow: 0 0 30px rgba(255,68,68,0.4);
+  border: 3px solid var(--red);
+}
+
+.avatar-student {
+  background: radial-gradient(circle at 35% 35%, #4cc9f0, #1a5276);
+  box-shadow: 0 0 30px rgba(76,201,240,0.4);
+  border: 3px solid var(--blue);
+}
+
+.fighter-label {
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.vs-badge {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--gold);
+  animation: vsPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes vsPulse {
+  0%, 100% { transform: scale(1); text-shadow: 0 0 10px rgba(255,209,102,0.3); }
+  50% { transform: scale(1.2); text-shadow: 0 0 30px rgba(255,209,102,0.7); }
+}
+
+/* ========== BATTLE SCREEN ========== */
+.battle-hp-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.hp-box {
+  flex: 1;
+  background: var(--bg-panel);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+.hp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.hp-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.hp-name.red { color: var(--red); }
+.hp-name.blue { color: var(--blue); }
+
+.hp-num {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--chalk-dim);
+}
+
+.hp-bar {
+  height: 12px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hp-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+  position: relative;
+}
+
+.hp-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px 6px 0 0;
+}
+
+.hp-fill.red { background: linear-gradient(90deg, #ff4444, #ff8800); }
+.hp-fill.blue { background: linear-gradient(90deg, #4cc9f0, #0088ff); }
+
+.combo-bar {
+  height: 5px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.combo-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--purple));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Battle Arena */
+.battle-arena {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 160px;
+  margin-bottom: 12px;
+}
+
+.fighter-col { text-align: center; }
+
+.fighter-orb {
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 6px;
+  transition: all 0.3s ease;
+}
+
+.fighter-orb.shake { animation: shake 0.4s ease; }
+.fighter-orb.win-pose { animation: winPose 0.6s ease; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+@keyframes winPose {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1); }
+}
+
+.fighter-orb.red-orb {
+  background: radial-gradient(circle at 35% 35%, #ff4444, #8b0000);
+  box-shadow: 0 0 25px rgba(255,68,68,0.4);
+  border: 3px solid var(--red);
+}
+
+.fighter-orb.blue-orb {
+  background: radial-gradient(circle at 35% 35%, #4cc9f0, #1a5276);
+  box-shadow: 0 0 25px rgba(76,201,240,0.4);
+  border: 3px solid var(--blue);
+}
+
+.fighter-orb.damaged { filter: brightness(1.5) saturate(0.3); }
+
+.fighter-name-text {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.round-badge {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--gold);
+  text-shadow: 0 0 20px rgba(255,209,102,0.5);
+  animation: vsPulse 2s ease-in-out infinite;
+}
+
+/* Damage popup */
+.damage-popup {
+  position: fixed;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--red);
+  text-shadow: 0 0 10px rgba(230,57,70,0.8);
+  pointer-events: none;
+  z-index: 50;
+  animation: dmgFloat 1s ease forwards;
+}
+
+.damage-popup.heal {
+  color: var(--green);
+  text-shadow: 0 0 10px rgba(6,214,160,0.8);
+}
+
+@keyframes dmgFloat {
+  0% { opacity: 1; transform: translateY(0) scale(0.5); }
+  30% { opacity: 1; transform: translateY(-30px) scale(1.3); }
+  100% { opacity: 0; transform: translateY(-80px) scale(1); }
+}
+
+/* ========== QUESTION ========== */
+.q-panel {
+  background: var(--bg-panel);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--gold);
+}
+
+.q-type-badge {
+  display: inline-block;
+  background: var(--bg-panel-2);
+  color: var(--gold);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-family: var(--font-display);
+  margin-bottom: 8px;
+}
+
+.q-text {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.q-text .hl { color: var(--gold); font-weight: 700; }
+.q-text .underline-subj {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+/* Timer */
+.timer-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.timer-bar-bg {
+  flex: 1;
+  height: 7px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.timer-bar-fill {
+  height: 100%;
+  background: var(--green);
+  border-radius: 4px;
+  transition: width 1s linear;
+}
+
+.timer-bar-fill.warn { background: var(--gold); }
+.timer-bar-fill.danger { background: var(--red); }
+
+.timer-text {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--gold);
+  min-width: 36px;
+  text-align: center;
+}
+
+/* Choices */
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.choice-btn {
+  background: var(--bg-panel-2);
+  color: var(--chalk);
+  padding: 13px 12px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  border: 2px solid transparent;
+  text-align: left;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+.choice-btn:hover:not(:disabled) { border-color: var(--chalk-dim); }
+.choice-btn:disabled { cursor: default; }
+
+.choice-btn.selected { border-color: var(--gold); background: rgba(255,209,102,0.1); }
+.choice-btn.correct { border-color: var(--green); background: rgba(6,214,160,0.15); color: var(--green); }
+.choice-btn.wrong { border-color: var(--red); background: rgba(230,57,70,0.15); color: var(--red); }
+
+/* Input */
+.input-row {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+.input-row input {
+  flex: 1;
+  font-family: var(--font-body);
+  background: var(--bg-panel-2);
+  border: 2px solid var(--bg-panel-2);
+  color: var(--chalk);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+.input-row input:focus { outline: none; border-color: var(--blue); }
+
+/* Explanation */
+.explanation {
+  background: var(--bg-panel-2);
+  border-left: 4px solid var(--green);
+  border-radius: 0 12px 12px 0;
+  padding: 14px 16px;
+  margin-top: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.explanation h4 {
+  font-family: var(--font-display);
+  color: var(--green);
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+.explanation p {
+  color: var(--chalk-dim);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.explanation .tag {
+  display: inline-block;
+  background: rgba(6,214,160,0.12);
+  border: 1px solid rgba(6,214,160,0.3);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  margin: 4px 4px 0 0;
+  color: var(--green);
+}
+
+/* Battle log */
+.battle-log {
+  background: var(--bg-panel);
+  border-radius: 12px;
+  padding: 12px;
+  max-height: 120px;
+  overflow-y: auto;
+  font-size: 0.82rem;
+  box-shadow: var(--shadow);
+}
+
+.battle-log::-webkit-scrollbar { width: 3px; }
+.battle-log::-webkit-scrollbar-thumb { background: var(--chalk-dim); border-radius: 2px; }
+
+.log-entry {
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  animation: fadeIn 0.2s ease;
+}
+
+.log-entry:last-child { border: none; }
+.log-dmg { color: var(--red); }
+.log-heal { color: var(--green); }
+.log-info { color: var(--blue); }
+.log-fact { color: var(--gold); font-style: italic; }
+.log-skill { color: var(--purple); }
+
+/* ========== RESULT ========== */
+.result-score {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  text-align: center;
+  color: var(--gold);
+}
+
+.result-headline {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 6px 0 0;
+}
+.result-headline strong { color: var(--gold); font-size: 1.7rem; }
+
+.wrong-item {
+  background: var(--bg-panel-2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+.wrong-item .tag-correct { color: var(--green); font-weight: 700; }
+.wrong-item .tag-wrong { color: var(--red); font-weight: 700; text-decoration: line-through; }
+
+/* ========== PRAISE ========== */
+.praise-overlay {
+  position: fixed; inset: 0;
+  background: rgba(10,14,26,0.92);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 60;
+}
+.praise-card { text-align: center; }
+.praise-icon { font-size: 4.5rem; animation: pop 0.5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes pop { from { transform: scale(0.3) rotate(-15deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+.praise-text {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--gold);
+  margin-top: 8px;
+}
+
+/* ========== BUBBLE ========== */
+.bubble {
+  background: var(--bg-panel-2);
+  border-radius: 14px;
+  padding: 12px 14px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity .35s ease, transform .35s ease;
+}
+.bubble.show { opacity: 1; transform: translateY(0); }
+.bubble .who {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  display: block;
+  margin-bottom: 4px;
+}
+.bubble p { margin: 0; font-size: 0.95rem; line-height: 1.5; }
+.bubble.ironman-b { border-left: 4px solid var(--red); }
+.bubble.ironman-b .who { color: var(--red); }
+.bubble.student-b { border-left: 4px solid var(--blue); margin-left: 16px; }
+.bubble.student-b .who { color: var(--blue); }
+
+/* ========== PROGRESS ========== */
+.progress-wrap {
+  height: 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--red), var(--gold));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 420px) {
+  .choice-grid { grid-template-columns: 1fr; }
+  .title-block h1 { font-size: 1.7rem; }
+  .fighter-orb { width: 70px; height: 70px; font-size: 2rem; }
+  .fighters-preview { gap: 16px; }
+  .fighter-avatar { width: 70px; height: 70px; font-size: 2.2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen { animation: none; }
+  .bubble { opacity: 1; transform: none; transition: none; }
+  .fighter-orb.shake { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<div id="app">
+  <main id="screen"></main>
+</div>
+
+<div id="praise-overlay" class="praise-overlay hidden">
+  <div class="praise-card">
+    <div class="praise-icon" id="praise-icon"></div>
+    <div class="prraise-text" id="praise-text"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STARFIELD
+// ============================================================
+(function() {
+  const c = document.getElementById('starfield');
+  const ctx = c.getContext('2d');
+  let stars = [];
+  function resize() {
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+    stars = [];
+    for (let i = 0; i < 180; i++) {
+      stars.push({ x: Math.random()*c.width, y: Math.random()*c.height,
+        r: Math.random()*1.2+0.3, sp: Math.random()*0.12+0.02,
+        a: Math.random(), da: Math.random()*0.012+0.003 });
+    }
+  }
+  function draw() {
+    ctx.clearRect(0,0,c.width,c.height);
+    stars.forEach(s => {
+      s.a += s.da;
+      if (s.a > 1 || s.a < 0.15) s.da *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${s.a})`;
+      ctx.fill();
+      s.y -= s.sp;
+      if (s.y < -5) { s.y = c.height+5; s.x = Math.random()*c.width; }
+    });
+    requestAnimationFrame(draw);
+  }
+  resize(); draw();
+  window.addEventListener('resize', resize);
+})();
+
+// ============================================================
+// QUESTIONS - 중1 과학 4단원 상태변화 (20문제)
+// ============================================================
+const QUESTIONS = [
+  // --- 객관식 (11문제 x 10점) ---
+  { type:'mcq', q:'고체가 액체로 변하는 상태변화를 무엇이라 하나요?', choices:['응고','융해','기화','승화'], answer:1,
+    explain:'융해는 고체가 열을 흡수하여 액체로 녹는 현상입니다. 예: 얼음이 물로 녹음', tags:['융해','상태변화'] },
+  { type:'mcq', q:'액체가 고체로 변하는 상태변화를 무엇이라 하나요?', choices:['융해','기화','응고','승화'], answer:2,
+    explain:'응고는 액체가 열을 방출하여 고체로 굳는 현상입니다. 예: 물이 얼음으로 얼음', tags:['응고','상태변화'] },
+  { type:'mcq', q:'액체가 기체로 변하는 상태변화를 총칭하여 무엇이라 하나요?', choices:['증발','융해','기화','액화'], answer:2,
+    explain:'기화는 액체가 열을 흡수하여 기체로 바뀌는 현상으로, 증발과 끓음을 모두 포함합니다.', tags:['기화','상태변화'] },
+  { type:'mcq', q:'기체가 액체로 변하는 상태변화를 무엇이라 하나요?', choices:['기화','융해','승화','액화'], answer:3,
+    explain:'액화는 기체가 열을 방출하여 액체로 변하는 현상입니다. 예: 수증기가 물방울로 변함', tags:['액화','상태변화'] },
+  { type:'mcq', q:'고체가 바로 기체로 변하는 상태변화를 무엇이라 하나요?', choices:['융해','응고','기화','승화'], answer:3,
+    explain:'승화는 고체가 열을 흡수하여 액체를 거치지 않고 바로 기체로 바뀌는 현상입니다. 예: 드라이아이스', tags:['승화','상태변화'] },
+  { type:'mcq', q:'물이 얼 때 주변 온도가 어떻게 변하나요?', choices:['온도가 낮아진다','온도가 높아진다','온도가 변하지 않는다','먼저 낮아졌다가 높아진다'], answer:1,
+    explain:'물이 얼 때(응고)는 열을 방출하므로 주변 온도가 높아집니다.', tags:['응고','열의 방출'] },
+  { type:'mcq', q:'다음 중 열을 흡수하는 상태변화가 아닌 것은?', choices:['융해','기화','승화','응고'], answer:3,
+    explain:'응고는 열을 방출하는 변화입니다. 융해, 기화, 승화는 모두 열을 흡수합니다.', tags:['열의 흡수','열의 방출'] },
+  { type:'mcq', q:'물이 끓을 때 기포가 생기는 이유는?', choices:['물이 오염되어서','물속에 녹아있던 공기가 나오기 때문','물이 분해되어서','산소가 들어가서'], answer:1,
+    explain:'끓을 때 기포는 물속에 녹아있던 공기가 나오는 것과, 물이 기화하여 수증기 기포가 생긴 것입니다.', tags:['끓음','기화'] },
+  { type:'mcq', q:'가열곡선에서 수평 구간은 무엇을 의미하나요?', choices:['온도가 계속 올라간다','상태변화가 일어나는 구간','열이 방출되는 구간','온도가 내려간다'], answer:1,
+    explain:'가열곡선의 수평 구간은 융해(고체→액체) 또는 끓음(액체→기체)과 같은 상태변화가 일어나는 구간입니다.', tags:['가열곡선','상태변화'] },
+  { type:'mcq', q:'증발과 끓음의 공통점은 무엇인가요?', choices:['모두 기화 현상이다','끓음만 기화 현상이다','증발은 고체에서 일어난다','온도 조건이 같다'], answer:0,
+    explain:'증발과 끓음은 모두 액체가 기체로 변하는 기화 현상입니다. 차이점은 끓음은 일정한 온도(끓는점)에서 일어납니다.', tags:['증발','끓음','기화'] },
+  { type:'mcq', q:'다음 중 열을 방출하는 상태변화가 아닌 것은?', choices:['응고','액화','융해','승화'], answer:2,
+    explain:'융해(고체→액체)는 열을 흡수하는 변화입니다. 응고, 액화는 열을 방출합니다.', tags:['열의 방출','상태변화'] },
+  // --- OX (5문제 x 10점) ---
+  { type:'ox', q:'증발은 액체의 표면에서만 일어나지만, 끓음은 액체의 내부와 표면 모두에서 일어난다.', answer:true,
+    explain:'증발은 표면에서만 천천히 일어나지만, 끓음은 일정한 온도에서 내부와 표면 모두에서 빠르게 일어납니다.', tags:['증발','끓음'] },
+  { type:'ox', q:'얼음이 녹을 때 주변 온도가 낮아진다.', answer:false,
+    explain:'얼음이 녹을 때(융해)는 주변에서 열을 흡수하므로 주변 온도가 낮아집니다. 반대로 물이 얼 때는 열을 방출하여 주변이 따뜻해집니다.', tags:['융해','열의 흡수'] },
+  { type:'ox', q:'가열곡선에서 수평 구간의 길이가 길수록 더 많은 열이 필요하다.', answer:true,
+    explain:'수평 구간이 길다는 것은 상태변화에 더 많은 열(잠열)이 필요하다는 의미입니다. 같은 물질이면 질량이 많을수록 수평 구간이 깁니다.', tags:['가열곡선','잠열'] },
+  { type:'ox', q:'증발은 끓음보다 느리게 일어난다.', answer:true,
+    explain:'증발은 액체 표면에서 천천히 일어나지만, 끓음은 일정한 온도(끓는점)에서 내부와 표면에서 동시에 빠르게 일어납니다.', tags:['증발','끓음'] },
+  { type:'ox', q:'끓는점에서 액체가 모두 기체로 될 때까지 온도가 계속 올라간다.', answer:false,
+    explain:'끓는점에 도달하면 액체가 기화하는 동안 온도가 변하지 않습니다. 모든 액체가 기화한 후에야 온도가 올라갑니다.', tags:['끓음','가열곡선'] },
+  // --- 단답형 (4문제 x 15점) ---
+  { type:'input', q:'상태변화가 일어날 때 흡수하거나 방출하는 열량을 "___"이라 합니다.', answer:['잠열'],
+    explain:'잠열은 상태변화가 일어날 때 온도의 변화 없이 흡수하거나 방출하는 열량입니다. 융해잠열, 기화잠열 등이 있습니다.', tags:['잠열','상태변화'] },
+  { type:'input', q:'액체가 기체로 변할 때, 액체 내부와 표면에서 동시에 기체가 되는 현상을 "___"이라 합니다.', answer:['끓음'],
+    explain:'끓음은 액체가 일정한 온도(끓는점)에서 내부와 표면에서 동시에 기화하는 현상입니다.', tags:['끓음','기화'] },
+  { type:'input', q:'고체가 열을 흡수하여 액체를 거치지 않고 바로 기체로 변하는 현상은?', answer:['승화'],
+    explain:'승화는 고체가 열을 흡수하여 액체를 거치지 않고 바로 기체로 변하는 현상입니다. 드라이아이스가 대표적인 예시입니다.', tags:['승화','상태변화'] },
+  { type:'input', q:'액체가 기체로 변할 때, 액체의 표면에서만 천천히 일어나는 현상을 "___"이라 합니다.', answer:['증발'],
+    explain:'증발은 액체의 표면에서만 천천히 일어나는 기화 현상입니다. 모든 온도에서 일어나지만, 온도가 높을수록 빠르게 일어납니다.', tags:['증발','기화'] },
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let G = {
+  screen: 'start',
+  playerName: '학생',
+  currentQ: 0,
+  score: 0,
+  playerHp: 500,
+  playerMaxHp: 200,
+  enemyHp: 500,
+  enemyMaxHp: 500,
+  combo: 0,
+  maxCombo: 0,
+  timer: null,
+  timeLeft: 20,
+  answered: false,
+  wrongAnswers: [],
+  totalCorrect: 0,
+  totalQuestions: QUESTIONS.length,
+  maxScore: 220,
+};
+
+const $ = id => document.getElementById(id);
+const screen = $('screen');
+
+// ============================================================
+// UTILS
+// ============================================================
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(html) {
+  screen.innerHTML = html;
+  screen.className = 'screen';
+  setTimeout(() => {
+    document.querySelectorAll('.bubble').forEach((b, i) => {
+      setTimeout(() => b.classList.add('show'), i * 350);
+    });
+  }, 50);
+}
+
+function showPraise(icon, text, dur=1000) {
+  $('praise-icon').textContent = icon;
+  $('praise-text').textContent = text;
+  $('praise-overlay').classList.remove('hidden');
+  setTimeout(() => $('praise-overlay').classList.add('hidden'), dur);
+}
+
+function showDamagePopup(amount, isEnemy) {
+  const popup = document.createElement('div');
+  popup.className = 'damage-popup';
+  popup.textContent = `-${amount}`;
+  popup.style.left = isEnemy ? '60%' : '30%';
+  popup.style.top = '40%';
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1000);
+}
+
+function showHealPopup(amount) {
+  const popup = document.createElement('div');
+  popup.className = 'damage-popup heal';
+  popup.textContent = `+${amount}`;
+  popup.style.left = '30%';
+  popup.style.top = '40%';
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 1000);
+}
+
+// ============================================================
+// START SCREEN
+// ============================================================
+function renderStart() {
+  G.screen = 'start';
+  showScreen(`
+    <div class="title-block">
+      <h1>상태변화 배틀</h1>
+      <p>아이언맨 vs 학생 | 중1 과학 4단원</p>
+    </div>
+    <div class="fighters-preview">
+      <div class="fighter-preview">
+        <div class="fighter-avatar avatar-ironman">🦾</div>
+        <div class="fighter-label" style="color:var(--red)">아이언맨</div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="fighter-preview">
+        <div class="fighter-avatar avatar-student">🧑‍🎓</div>
+        <div class="fighter-label" style="color:var(--blue)">학생</div>
+      </div>
+    </div>
+    <div class="panel" style="text-align:center;">
+      <p style="color:var(--chalk-dim);margin-bottom:14px;line-height:1.6;">
+        상태변화 퀴즈를 풀며 아이언맨과 배틀!<br>
+        문제를 맞추면 아이언맨에게 데미지를,<br>
+        틀리면 아이언맨에게 맞습니다!
+      </p>
+      <div style="margin-bottom:14px;">
+        <input type="text" id="nameInput" value="학생" maxlength="10"
+          style="max-width:180px;text-align:center;font-size:1.05rem;background:var(--bg-panel-2);border:2px solid var(--bg-panel-2);color:var(--chalk);padding:10px 14px;border-radius:10px;font-family:var(--font-body);">
+      </div>
+      <button class="btn-red" onclick="startGame()" style="width:100%;max-width:280px;">
+        배틀 시작
+      </button>
+    </div>
+  `);
+}
+
+function startGame() {
+  G.playerName = $('nameInput').value.trim() || '학생';
+  G.currentQ = 0;
+  G.score = 0;
+  G.playerHp = 500;
+  G.playerMaxHp = 200;
+  G.enemyHp = 500;
+  G.enemyMaxHp = 500;
+  G.combo = 0;
+  G.maxCombo = 0;
+  G.wrongAnswers = [];
+  G.totalCorrect = 0;
+  shuffleArray(QUESTIONS);
+  renderIntro();
+}
+
+// ============================================================
+// INTRO
+// ============================================================
+function renderIntro() {
+  G.screen = 'intro';
+  showScreen(`
+    <div class="panel">
+      <div style="display:flex;flex-direction:column;gap:10px;" id="introDialogue">
+        <div class="bubble ironman-b">
+          <span class="who">아이언맨</span>
+          <p>하하! 상태변화를 잘 안다고? 나와 대결해볼래?</p>
+        </div>
+        <div class="bubble student-b">
+          <span class="who">${G.playerName}</span>
+          <p>좋아! 융해, 응고, 기화, 액화... 전부 할 수 있어!</p>
+        </div>
+        <div class="bubble ironman-b">
+          <span class="who">아이언맨</span>
+          <p>흥! 20문제를 맞춰봐. 틀리면 내 레이저가 나갈걸?</p>
+        </div>
+        <div class="bubble student-b">
+          <span class="who">${G.playerName}</span>
+          <p>두렵지 않아! 준비됐어!</p>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <button class="btn-red" onclick="nextQuestion()">배틀 시작!</button>
+    </div>
+  `);
+}
+
+// ============================================================
+// BATTLE UI
+// ============================================================
+function renderBattle() {
+  const q = QUESTIONS[G.currentQ];
+  const pPct = Math.max(0, G.playerHp / G.playerMaxHp * 100);
+  const ePct = Math.max(0, G.enemyHp / G.enemyMaxHp * 100);
+
+  let qBadge = '객관식';
+  if (q.type === 'ox') qBadge = 'OX';
+  else if (q.type === 'input') qBadge = '단답형';
+
+  let choicesHTML = '';
+  if (q.type === 'mcq') {
+    choicesHTML = `<div class="choice-grid" id="choices">
+      ${q.choices.map((c,i) => `<button class="choice-btn" onclick="answerMCQ(${i})">${c}</button>`).join('')}
+    </div>`;
+  } else if (q.type === 'ox') {
+    choicesHTML = `<div class="choice-grid">
+      <button class="choice-btn" onclick="answerOX(true)" style="text-align:center;font-size:1.1rem;">O (맞음)</button>
+      <button class="choice-btn" onclick="answerOX(false)" style="text-align:center;font-size:1.1rem;">X (틀림)</button>
+    </div>`;
+  } else if (q.type === 'input') {
+    choicesHTML = `<div class="input-row">
+      <input type="text" id="answerInput" placeholder="정답을 입력하세요" onkeydown="if(event.key==='Enter')checkInput()">
+      <button class="btn-blue" onclick="checkInput()" style="white-space:nowrap;">제출</button>
+    </div>`;
+  }
+
+  showScreen(`
+    <div class="battle-hp-section">
+      <div class="hp-box">
+        <div class="hp-header">
+          <span class="hp-name red">🦾 아이언맨</span>
+          <span class="hp-num" id="enemy-hp-num">${Math.max(0,G.enemyHp)}/${G.enemyMaxHp}</span>
+        </div>
+        <div class="hp-bar"><div class="hp-fill red" id="enemy-hp-bar" style="width:${ePct}%"></div></div>
+      </div>
+      <div class="hp-box">
+        <div class="hp-header">
+          <span class="hp-name blue">🧑‍🎓 ${G.playerName}</span>
+          <span class="hp-num" id="player-hp-num">${Math.max(0,G.playerHp)}/${G.playerMaxHp}</span>
+        </div>
+        <div class="hp-bar"><div class="hp-fill blue" id="player-hp-bar" style="width:${pPct}%"></div></div>
+        <div class="combo-bar"><div class="combo-fill" id="combo-bar" style="width:${G.combo*20}%"></div></div>
+      </div>
+    </div>
+
+    <div class="battle-arena">
+      <div class="fighter-col">
+        <div class="fighter-orb red-orb" id="enemy-orb">🦾</div>
+        <div class="fighter-name-text" style="color:var(--red)">아이언맨</div>
+      </div>
+      <div class="round-badge">${G.currentQ+1}/${QUESTIONS.length}</div>
+      <div class="fighter-col">
+        <div class="fighter-orb blue-orb" id="player-orb">🧑‍🎓</div>
+        <div class="fighter-name-text" style="color:var(--blue)">${G.playerName}</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-fill" style="width:${G.currentQ/QUESTIONS.length*100}%"></div>
+    </div>
+
+    <div class="timer-wrap">
+      <div class="timer-bar-bg"><div class="timer-bar-fill" id="timerBar" style="width:100%"></div></div>
+      <div class="timer-text" id="timerText">20초</div>
+    </div>
+
+    <div class="q-panel">
+      <span class="q-type-badge">${qBadge} 문제 ${G.currentQ+1}</span>
+      <div class="q-text">${q.q}</div>
+      ${choicesHTML}
+      <div id="explanation"></div>
+    </div>
+
+    <div class="battle-log" id="battleLog">
+      <div class="log-entry log-info">⚔️ 배틀 시작!</div>
+    </div>
+  `);
+
+  if (q.type === 'input') {
+    setTimeout(() => { const inp = $('answerInput'); if (inp) inp.focus(); }, 100);
+  }
+
+  startTimer();
+}
+
+function addLog(type, text) {
+  const log = $('battleLog');
+  if (!log) return;
+  const entry = document.createElement('div');
+  entry.className = 'log-entry log-' + type;
+  entry.textContent = text;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ============================================================
+// TIMER
+// ============================================================
+function startTimer() {
+  clearInterval(G.timer);
+  G.timeLeft = 20;
+  G.answered = false;
+  updateTimer();
+  G.timer = setInterval(() => {
+    G.timeLeft--;
+    updateTimer();
+    if (G.timeLeft <= 0) {
+      clearInterval(G.timer);
+      if (!G.answered) timeUp();
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  const bar = $('timerBar');
+  const txt = $('timerText');
+  if (!bar || !txt) return;
+  const pct = (G.timeLeft / 20) * 100;
+  bar.style.width = pct + '%';
+  txt.textContent = G.timeLeft + '초';
+  bar.className = 'timer-bar-fill' + (G.timeLeft <= 5 ? ' danger' : G.timeLeft <= 10 ? ' warn' : '');
+}
+
+function timeUp() {
+  G.answered = true;
+  const q = QUESTIONS[G.currentQ];
+  G.combo = 0;
+  G.wrongAnswers.push({ q: q.q, correct: getCorrectText(q), your: '시간 초과' });
+  enemyAttack(5);
+  addLog('dmg', '⏰ 시간 초과! 아이언맨의 공격!');
+  showExplanation(q, false);
+}
+
+function getCorrectText(q) {
+  if (q.type === 'mcq') return q.choices[q.answer];
+  if (q.type === 'ox') return q.answer ? 'O' : 'X';
+  if (q.type === 'input') return q.answer[0];
+  return '';
+}
+
+// ============================================================
+// ANSWER HANDLERS
+// ============================================================
+function answerMCQ(idx) {
+  if (G.answered) return;
+  G.answered = true;
+  clearInterval(G.timer);
+  const q = QUESTIONS[G.currentQ];
+  const correct = idx === q.answer;
+
+  document.querySelectorAll('.choice-btn').forEach((b, i) => {
+    if (i === q.answer) b.classList.add('correct');
+    else if (i === idx && !correct) b.classList.add('wrong');
+    b.disabled = true;
+  });
+
+  handleAnswer(correct, q, q.choices[idx]);
+}
+
+function answerOX(val) {
+  if (G.answered) return;
+  G.answered = true;
+  clearInterval(G.timer);
+  const q = QUESTIONS[G.currentQ];
+  const correct = val === q.answer;
+
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    const isTrue = b.textContent.includes('맞음');
+    if ((isTrue && q.answer) || (!isTrue && !q.answer)) b.classList.add('correct');
+    else if ((isTrue && val) || (!isTrue && !val)) b.classList.add('wrong');
+    b.disabled = true;
+  });
+
+  handleAnswer(correct, q, val ? 'O' : 'X');
+}
+
+function checkInput() {
+  if (G.answered) return;
+  G.answered = true;
+  clearInterval(G.timer);
+  const q = QUESTIONS[G.currentQ];
+  const userAns = ($('answerInput')?.value || '').trim();
+  const correct = q.answer.some(a => userAns === a || userAns.replace(/\s/g,'') === a.replace(/\s/g,''));
+
+  handleAnswer(correct, q, userAns || '(미입력)');
+}
+
+function handleAnswer(correct, q, userAnswer) {
+  if (correct) {
+    G.combo++;
+    if (G.combo > G.maxCombo) G.maxCombo = G.combo;
+    G.totalCorrect++;
+    let dmg = 15 + G.combo * 3;
+    G.enemyHp -= dmg;
+    G.score += 10 + G.combo * 2;
+    showDamagePopup(dmg, true);
+    playerAttackAnim();
+    addLog('dmg', `✅ 정답! ${dmg} 데미지! (콤보 x${G.combo})`);
+
+    // Heal on combo
+    if (G.combo >= 3) {
+      const heal = 5;
+      G.playerHp = Math.min(G.playerMaxHp, G.playerHp + heal);
+      showHealPopup(heal);
+      addLog('heal', `🔥 콤보 보너스! HP +${heal}`);
+    }
+
+    if (G.combo >= 5) showPraise('🔥', `${G.combo}콤보! 대단해!`);
+    else if (G.combo >= 3) showPraise('⚡', `${G.combo}콤보!`);
+    else showPraise('✅', '정답!');
+  } else {
+    G.combo = 0;
+    G.wrongAnswers.push({ q: q.q, correct: getCorrectText(q), your: userAnswer });
+    let dmg = 8;
+    G.playerHp -= dmg;
+    showDamagePopup(dmg, false);
+    enemyAttackAnim();
+    addLog('dmg', `❌ 오답! 아이언맨의 공격! -${dmg}HP`);
+  }
+
+  updateBattleHP();
+
+  if (G.enemyHp <= 0) {
+    G.enemyHp = 0;
+    updateBattleHP();
+    setTimeout(() => renderResult(true), 800);
+    return;
+  }
+  if (G.playerHp <= 0) {
+    G.playerHp = 0;
+    updateBattleHP();
+    setTimeout(() => renderResult(false), 800);
+    return;
+  }
+
+  showExplanation(q, correct);
+}
+
+function updateBattleHP() {
+  const ePct = Math.max(0, G.enemyHp / G.enemyMaxHp * 100);
+  const pPct = Math.max(0, G.playerHp / G.playerMaxHp * 100);
+  const eBar = $('enemy-hp-bar');
+  const pBar = $('player-hp-bar');
+  const eNum = $('enemy-hp-num');
+  const pNum = $('player-hp-num');
+  const cBar = $('combo-bar');
+  if (eBar) eBar.style.width = ePct + '%';
+  if (pBar) pBar.style.width = pPct + '%';
+  if (eNum) eNum.textContent = `${Math.max(0,G.enemyHp)}/${G.enemyMaxHp}`;
+  if (pNum) pNum.textContent = `${Math.max(0,G.playerHp)}/${G.playerMaxHp}`;
+  if (cBar) cBar.style.width = Math.min(100, G.combo * 20) + '%';
+}
+
+function playerAttackAnim() {
+  const orb = $('enemy-orb');
+  if (orb) { orb.classList.add('shake'); setTimeout(() => orb.classList.remove('shake'), 400); }
+}
+
+function enemyAttackAnim() {
+  const orb = $('player-orb');
+  if (orb) { orb.classList.add('shake'); setTimeout(() => orb.classList.remove('shake'), 400); }
+}
+
+function enemyAttack(dmg) {
+  G.playerHp -= dmg;
+  showDamagePopup(dmg, false);
+  enemyAttackAnim();
+  updateBattleHP();
+}
+
+// ============================================================
+// EXPLANATION
+// ============================================================
+function showExplanation(q, correct) {
+  const el = $('explanation');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="explanation">
+      <h4>${correct ? '✅ 정답!' : '❌ 오답'}</h4>
+      <p>${q.explain}</p>
+      <div style="margin-top:8px;">
+        ${(q.tags||[]).map(t => `<span class="tag">${t}</span>`).join('')}
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:14px;">
+      <button class="btn-gold" onclick="nextQuestion()" style="width:100%;max-width:300px;">
+        ${G.currentQ < QUESTIONS.length - 1 ? '다음 문제 →' : '결과 보기'}
+      </button>
+    </div>
+  `;
+}
+
+function nextQuestion() {
+  G.currentQ++;
+  if (G.currentQ >= QUESTIONS.length) {
+    renderResult(G.enemyHp <= 0);
+  } else {
+    renderBattle();
+  }
+}
+
+// ============================================================
+// RESULT
+// ============================================================
+function renderResult(playerWon) {
+  G.screen = 'result';
+  clearInterval(G.timer);
+
+  const pct = Math.round(G.score / G.maxScore * 100);
+  let grade, gradeIcon;
+  if (pct >= 90) { grade = '평가 끝! 아이언맨 제압!'; gradeIcon = '🏆'; }
+  else if (pct >= 70) { grade = '대단한 실력!'; gradeIcon = '⭐'; }
+  else if (pct >= 50) { grade = '분전했다!'; gradeIcon = '💪'; }
+  else { grade = '아이언맨에게 졌다...'; gradeIcon = '😵'; }
+
+  if (!playerWon) { grade = '아이언맨에게 패배...'; gradeIcon = '💥'; }
+
+  let wrongHTML = '';
+  if (G.wrongAnswers.length > 0) {
+    wrongHTML = `<div class="panel">
+      <h3 style="font-family:var(--font-display);color:var(--red);margin-bottom:12px;">오답 노트</h3>
+      ${G.wrongAnswers.map(w => `
+        <div class="wrong-item">
+          <p style="margin-bottom:6px;">${w.q}</p>
+          <p><span class="tag-wrong">내 답: ${w.your}</span></p>
+          <p><span class="tag-correct">정답: ${w.correct}</span></p>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  const facts = [
+    '융해: 고체→액체 (열 흡수)',
+    '응고: 액체→고체 (열 방출)',
+    '기화: 액체→기체 (열 흡수) - 증발과 끓음 포함',
+    '액화: 기체→액체 (열 방출)',
+    '승화: 고체→기체 (열 흡수)',
+  ];
+
+  showScreen(`
+    <div class="panel" style="text-align:center;">
+      <div style="font-size:4rem;margin-bottom:10px;">${gradeIcon}</div>
+      <h2 style="font-family:var(--font-display);color:var(--gold);font-size:1.5rem;margin-bottom:6px;">${grade}</h2>
+      <div class="result-score">${G.score}점</div>
+      <div class="result-headline">${G.playerName}의 배틀 결과</div>
+      <div style="display:flex;justify-content:center;gap:20px;margin-top:12px;color:var(--chalk-dim);font-size:0.9rem;">
+        <span>정답: <strong style="color:var(--green)">${G.totalCorrect}</strong>/${G.totalQuestions}</span>
+        <span>최대 콤보: <strong style="color:var(--gold)">${G.maxCombo}</strong></span>
+        <span>남은 HP: <strong style="color:var(--blue)">${Math.max(0,G.playerHp)}</strong></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 style="font-family:var(--font-display);color:var(--green);margin-bottom:12px;">상태변화 총정리</h3>
+      ${facts.map(f => `
+        <div style="padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.9rem;color:var(--chalk-dim);">
+          <strong style="color:var(--gold);">●</strong> ${f}
+        </div>
+      `).join('')}
+    </div>
+
+    ${wrongHTML}
+
+    <div style="text-align:center;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-secondary" onclick="renderStart()">메인으로</button>
+      <button class="btn-red" onclick="startGame()">다시 하기</button>
+    </div>
+  `);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderStart();
+</script>
+</body>
+</html>

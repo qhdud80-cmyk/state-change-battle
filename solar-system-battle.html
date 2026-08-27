@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>태양계 배틀 - 중1과학 7단원</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #00f0ff;
+    --secondary: #ff00e6;
+    --accent: #ffe600;
+    --bg-dark: #0a0a2e;
+    --bg-darker: #050520;
+    --glass: rgba(255,255,255,0.05);
+    --glass-border: rgba(255,255,255,0.1);
+  }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg-darker);
+    color: #fff;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Starfield background */
+  #stars-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .game-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeIn 0.8s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  @keyframes glow {
+    0%, 100% { text-shadow: 0 0 20px var(--primary), 0 0 40px var(--primary); }
+    50% { text-shadow: 0 0 40px var(--primary), 0 0 80px var(--primary), 0 0 120px var(--secondary); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-100px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(100px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* === TITLE SCREEN === */
+  .title-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+  }
+
+  .title-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3.5em;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: glow 3s ease-in-out infinite;
+    margin-bottom: 10px;
+  }
+
+  .title-sub {
+    font-size: 1.1em;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 8px;
+    letter-spacing: 3px;
+  }
+
+  .title-unit {
+    font-size: 0.9em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 50px;
+  }
+
+  .sun-visual {
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #ffe600 20%, #ff8c00 50%, #ff4500 80%, transparent 100%);
+    box-shadow: 0 0 60px #ff8c00, 0 0 120px #ff4500, 0 0 200px rgba(255,69,0,0.5);
+    animation: pulse 3s ease-in-out infinite;
+    margin-bottom: 50px;
+    position: relative;
+  }
+
+  .sun-visual::after {
+    content: '';
+    position: absolute;
+    top: -30px; left: -30px; right: -30px; bottom: -30px;
+    border-radius: 50%;
+    background: radial-gradient(circle, transparent 60%, rgba(255,140,0,0.1) 100%);
+    animation: pulse 2s ease-in-out infinite reverse;
+  }
+
+  .btn {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 700;
+    padding: 16px 50px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .btn:hover::before { left: 100%; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), #0080ff);
+    color: #000;
+    box-shadow: 0 0 30px rgba(0,240,255,0.4);
+  }
+
+  .btn-primary:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 50px rgba(0,240,255,0.7);
+  }
+
+  .btn-secondary {
+    background: var(--glass);
+    border: 2px solid var(--glass-border);
+    color: #fff;
+    backdrop-filter: blur(10px);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 30px rgba(0,240,255,0.3);
+    transform: scale(1.05);
+  }
+
+  /* === SELECT SCREEN === */
+  .select-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2em;
+    text-align: center;
+    margin: 30px 0;
+    color: var(--primary);
+  }
+
+  .planets-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .planet-card {
+    background: var(--glass);
+    border: 2px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 20px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .planet-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.03));
+    border-radius: 18px;
+  }
+
+  .planet-card:hover {
+    transform: translateY(-8px) scale(1.03);
+    border-color: var(--primary);
+    box-shadow: 0 10px 40px rgba(0,240,255,0.2);
+  }
+
+  .planet-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 40px rgba(255,230,0,0.4);
+    background: rgba(255,230,0,0.08);
+  }
+
+  .planet-sphere {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    position: relative;
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .planet-name {
+    font-weight: 900;
+    font-size: 1em;
+    margin-bottom: 4px;
+  }
+
+  .planet-name-en {
+    font-size: 0.7em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 8px;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  .planet-stats {
+    font-size: 0.72em;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+  }
+
+  .stat-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+
+  .stat-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* Planet-specific colors */
+  .mercury-bg { background: radial-gradient(circle at 35% 35%, #c2b8a3, #8a8177, #5c5346); }
+  .venus-bg { background: radial-gradient(circle at 35% 35%, #ffd699, #e8a84c, #c47f17); }
+  .earth-bg { background: radial-gradient(circle at 35% 35%, #7ec8e3, #2d8f4e, #1a5c30, #1e3a6e); }
+  .mars-bg { background: radial-gradient(circle at 35% 35%, #e8734a, #c1440e, #8b2500); }
+  .jupiter-bg { background: radial-gradient(circle at 35% 35%, #e8c99b, #c9956b, #a0522d); }
+  .saturn-bg { background: radial-gradient(circle at 35% 35%, #f4d58d, #c9a849, #a67c30); }
+  .uranus-bg { background: radial-gradient(circle at 35% 35%, #b8e8e8, #4fc3c3, #1a8a8a); }
+  .neptune-bg { background: radial-gradient(circle at 35% 35%, #5b7fdb, #2e4ea0, #1a2d6b); }
+
+  .saturn-ring {
+    position: absolute;
+    width: 110%; height: 30px;
+    border: 3px solid rgba(200,160,60,0.5);
+    border-radius: 50%;
+    top: 50%; left: -5%;
+    transform: rotateX(75deg);
+  }
+
+  /* === INFO PANEL === */
+  .info-panel {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    margin-top: 20px;
+    backdrop-filter: blur(10px);
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .info-panel.show { display: block; }
+
+  .info-panel h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--primary);
+    margin-bottom: 12px;
+  }
+
+  .info-panel p {
+    color: rgba(255,255,255,0.7);
+    line-height: 1.8;
+    font-size: 0.9em;
+  }
+
+  .info-panel .fact-tag {
+    display: inline-block;
+    background: rgba(0,240,255,0.1);
+    border: 1px solid rgba(0,240,255,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.78em;
+    margin: 4px 4px 0 0;
+    color: var(--primary);
+  }
+
+  /* === BATTLE SCREEN === */
+  .battle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .battle-round {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2em;
+    color: var(--accent);
+  }
+
+  .battle-stage {
+    font-size: 0.85em;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .hp-section {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 25px;
+  }
+
+  .hp-box {
+    flex: 1;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+  }
+
+  .hp-label {
+    font-size: 0.8em;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .hp-name {
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .hp-bar {
+    height: 14px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 7px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .hp-fill {
+    height: 100%;
+    border-radius: 7px;
+    transition: width 0.6s ease;
+    position: relative;
+  }
+
+  .hp-fill.player-hp { background: linear-gradient(90deg, #00ff88, #00f0ff); }
+  .hp-fill.enemy-hp { background: linear-gradient(90deg, #ff4444, #ff8800); }
+
+  .hp-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: rgba(255,255,255,0.2);
+    border-radius: 7px 7px 0 0;
+  }
+
+  .hp-text {
+    text-align: center;
+    font-size: 0.8em;
+    margin-top: 6px;
+    font-family: 'Orbitron', sans-serif;
+    color: rgba(255,255,255,0.7);
+  }
+
+  /* Battle Arena */
+  .battle-arena {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    min-height: 220px;
+    margin-bottom: 25px;
+    position: relative;
+  }
+
+  .fighter {
+    text-align: center;
+    position: relative;
+  }
+
+  .fighter-planet {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .fighter-planet.attack { animation: shake 0.3s ease; }
+  .fighter-planet.damage { animation: shake 0.4s ease; filter: brightness(2) saturate(0.3); }
+
+  .fighter-name {
+    font-weight: 700;
+    font-size: 1.1em;
+    margin-bottom: 4px;
+  }
+
+  .fighter-type {
+    font-size: 0.75em;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .vs-badge {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2em;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(255,230,0,0.5);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  /* Action buttons */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .action-btn {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 700;
+    padding: 18px;
+    border: 2px solid var(--glass-border);
+    border-radius: 16px;
+    background: var(--glass);
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95em;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .action-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .action-btn .action-icon {
+    font-size: 1.6em;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .action-btn .action-desc {
+    font-size: 0.7em;
+    color: rgba(255,255,255,0.4);
+    font-weight: 400;
+  }
+
+  .action-btn.atk { border-color: rgba(255,68,68,0.4); }
+  .action-btn.atk:hover { border-color: #ff4444; box-shadow: 0 0 30px rgba(255,68,68,0.3); }
+
+  .action-btn.def { border-color: rgba(0,200,255,0.4); }
+  .action-btn.def:hover { border-color: #00c8ff; box-shadow: 0 0 30px rgba(0,200,255,0.3); }
+
+  .action-btn.sk { border-color: rgba(255,230,0,0.4); }
+  .action-btn.sk:hover { border-color: #ffe600; box-shadow: 0 0 30px rgba(255,230,0,0.3); }
+
+  .action-btn.ult { border-color: rgba(255,0,230,0.4); }
+  .action-btn.ult:hover { border-color: #ff00e6; box-shadow: 0 0 30px rgba(255,0,230,0.3); }
+
+  /* Battle Log */
+  .battle-log {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 16px;
+    max-height: 180px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    backdrop-filter: blur(10px);
+  }
+
+  .battle-log::-webkit-scrollbar { width: 4px; }
+  .battle-log::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 2px; }
+
+  .log-entry {
+    padding: 6px 0;
+    font-size: 0.85em;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    animation: fadeIn 0.3s ease;
+  }
+
+  .log-entry:last-child { border: none; }
+  .log-damage { color: #ff6b6b; }
+  .log-heal { color: #51cf66; }
+  .log-info { color: #74c0fc; }
+  .log-fact { color: var(--accent); font-style: italic; }
+  .log-skill { color: var(--secondary); }
+
+  /* Fact popup */
+  .fact-popup {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10,10,46,0.97);
+    border: 2px solid var(--primary);
+    border-radius: 24px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    z-index: 100;
+    display: none;
+    animation: fadeIn 0.4s ease;
+    box-shadow: 0 0 60px rgba(0,240,255,0.3);
+  }
+
+  .fact-popup.show { display: block; }
+
+  .fact-popup h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-size: 1.1em;
+  }
+
+  .fact-popup p {
+    color: rgba(255,255,255,0.8);
+    line-height: 1.8;
+    margin-bottom: 16px;
+    font-size: 0.9em;
+  }
+
+  .fact-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 99;
+    display: none;
+  }
+
+  .fact-overlay.show { display: block; }
+
+  /* === RESULT SCREEN === */
+  .result-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+  }
+
+  .result-icon {
+    font-size: 5em;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .result-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+  }
+
+  .result-title.win { color: var(--accent); text-shadow: 0 0 40px rgba(255,230,0,0.5); }
+  .result-title.lose { color: #ff4444; text-shadow: 0 0 40px rgba(255,68,68,0.5); }
+
+  .result-score {
+    font-size: 1.2em;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 10px;
+  }
+
+  .result-facts {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 600px;
+    width: 100%;
+    margin: 20px 0 30px;
+    text-align: left;
+    backdrop-filter: blur(10px);
+  }
+
+  .result-facts h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--primary);
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .result-fact-item {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.88em;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+  }
+
+  .result-fact-item:last-child { border: none; }
+
+  .result-fact-item strong {
+    color: var(--accent);
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Difficulty select */
+  .difficulty-section {
+    margin-top: 40px;
+    text-align: center;
+  }
+
+  .difficulty-section h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: rgba(255,255,255,0.6);
+    font-size: 0.9em;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+  }
+
+  .diff-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .diff-btn {
+    padding: 10px 24px;
+    border-radius: 30px;
+    border: 2px solid var(--glass-border);
+    background: var(--glass);
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 700;
+    transition: all 0.3s ease;
+  }
+
+  .diff-btn:hover { border-color: var(--primary); color: #fff; }
+  .diff-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(255,230,0,0.1); }
+
+  /* Combo display */
+  .combo-display {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3em;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(255,230,0,0.8);
+    z-index: 50;
+    pointer-events: none;
+    display: none;
+    animation: comboAnim 1s ease forwards;
+  }
+
+  @keyframes comboAnim {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+    100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .planets-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .title-logo { font-size: 2.2em; }
+    .actions-grid { grid-template-columns: 1fr; }
+    .fighter-planet { width: 90px; height: 90px; }
+    .hp-section { flex-direction: column; gap: 12px; }
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: relative;
+  }
+  .tooltip::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .tooltip:hover::after { opacity: 1; }
+
+  .energy-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .energy-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff00e6, #ffe600);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+
+  .shield-indicator {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #00c8ff;
+    box-shadow: 0 0 10px #00c8ff;
+    margin-right: 6px;
+    animation: pulse 1s ease infinite;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars-canvas"></canvas>
+
+<div class="game-container">
+
+  <!-- === TITLE SCREEN === -->
+  <div class="screen active" id="screen-title">
+    <div class="title-screen">
+      <div class="sun-visual"></div>
+      <div class="title-logo">SOLAR SYSTEM<br>BATTLE</div>
+      <div class="title-sub">태양계 배틀</div>
+      <div class="title-unit">중학교 1학년 과학 · 7단원 태양계</div>
+      <br><br>
+      <button class="btn btn-primary" onclick="showScreen('screen-select')">게임 시작</button>
+      <br>
+      <button class="btn btn-secondary" onclick="showScreen('screen-guide')" style="font-size:0.9em;">게임 가이드</button>
+    </div>
+  </div>
+
+  <!-- === GUIDE SCREEN === -->
+  <div class="screen" id="screen-guide">
+    <h2 class="select-title">게임 가이드</h2>
+    <div style="max-width:650px; margin:0 auto;">
+      <div class="info-panel show" style="margin-bottom:16px;">
+        <h3>태양계의 구성</h3>
+        <p>
+          태양계는 <strong>태양</strong>과 그 주위를 도는 <strong>8개의 행성</strong>,
+          <strong>왜소행성</strong>, <strong>위성(달)</strong>, <strong>소행성</strong>,
+          <strong>혜성</strong> 등으로 이루어져 있습니다.
+        </p>
+      </div>
+      <div class="info-panel show" style="margin-bottom:16px;">
+        <h3>행성의 분류</h3>
+        <p>
+          <strong>지구형 행성:</strong> 수성, 금성, 지구, 화성 — 암석으로 이루어진 작고 단단한 행성<br>
+          <strong>목성형 행성:</strong> 목성, 토성, 천왕성, 해왕성 — 크고 가스/얼음으로 이루어진 행성
+        </p>
+      </div>
+      <div class="info-panel show" style="margin-bottom:16px;">
+        <h3>배틀 방법</h3>
+        <p>
+          1. 행성을 선택하여 내 캐릭터로 사용<br>
+          2. 공격, 방어, 스킬, 필살기 중 선택하여 전투<br>
+          3. 적 행성을 물리치면 다음 라운드로 진행<br>
+          4. 전투 중 진실된 과학 상식이 나옵니다!
+        </p>
+      </div>
+      <div class="info-panel show">
+        <h3>전투 시스템</h3>
+        <p>
+          <strong>공격:</strong> 기본 공격, 데미지 랜덤<br>
+          <strong>방어:</strong> 다음 턴 받는 데미지 50% 감소 + 에너지 충전<br>
+          <strong>스킬:</strong> 특수 공격, 효과가 강하지만 에너지 소모<br>
+          <strong>필살기:</strong> 강력한 공격 + 과학 사실 표시, 에너지 필요
+        </p>
+      </div>
+      <br>
+      <div style="text-align:center;">
+        <button class="btn btn-secondary" onclick="showScreen('screen-title')">돌아가기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === SELECT SCREEN === -->
+  <div class="screen" id="screen-select">
+    <h2 class="select-title">행성을 선택하세요</h2>
+    <div class="planets-grid" id="planets-grid"></div>
+
+    <div class="info-panel" id="select-info"></div>
+
+    <div class="difficulty-section">
+      <h3>난이도 선택</h3>
+      <div class="diff-btns">
+        <button class="diff-btn active" data-diff="easy" onclick="setDifficulty('easy',this)">쉬움</button>
+        <button class="diff-btn" data-diff="normal" onclick="setDifficulty('normal',this)">보통</button>
+        <button class="diff-btn" data-diff="hard" onclick="setDifficulty('hard',this)">어려움</button>
+      </div>
+    </div>
+
+    <br><br>
+    <div style="text-align:center;">
+      <button class="btn btn-secondary" onclick="showScreen('screen-title')" style="margin-right:12px;">돌아가기</button>
+      <button class="btn btn-primary" id="btn-start-battle" onclick="startBattle()" disabled>배틀 시작</button>
+    </div>
+  </div>
+
+  <!-- === BATTLE SCREEN === -->
+  <div class="screen" id="screen-battle">
+    <div class="battle-header">
+      <div class="battle-round" id="battle-round">ROUND 1</div>
+      <div class="battle-stage" id="battle-stage">태양계 외곽</div>
+    </div>
+
+    <div class="hp-section">
+      <div class="hp-box">
+        <div class="hp-label">
+          <span class="hp-name" id="player-name">플레이어</span>
+          <span id="player-hp-num">HP</span>
+        </div>
+        <div class="hp-bar"><div class="hp-fill player-hp" id="player-hp-bar" style="width:100%"></div></div>
+        <div class="energy-bar"><div class="energy-fill" id="player-energy-bar" style="width:0%"></div></div>
+        <div class="hp-text" id="player-status"></div>
+      </div>
+      <div class="hp-box">
+        <div class="hp-label">
+          <span class="hp-name" id="enemy-name">적</span>
+          <span id="enemy-hp-num">HP</span>
+        </div>
+        <div class="hp-bar"><div class="hp-fill enemy-hp" id="enemy-hp-bar" style="width:100%"></div></div>
+        <div class="hp-text" id="enemy-status"></div>
+      </div>
+    </div>
+
+    <div class="battle-arena">
+      <div class="fighter" id="player-fighter">
+        <div class="fighter-planet" id="player-planet-visual"></div>
+        <div class="fighter-name" id="player-fighter-name"></div>
+        <div class="fighter-type" id="player-fighter-type"></div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="fighter" id="enemy-fighter">
+        <div class="fighter-planet" id="enemy-planet-visual"></div>
+        <div class="fighter-name" id="enemy-fighter-name"></div>
+        <div class="fighter-type" id="enemy-fighter-type"></div>
+      </div>
+    </div>
+
+    <div class="battle-log" id="battle-log"></div>
+
+    <div class="actions-grid" id="actions-grid">
+      <button class="action-btn atk" onclick="playerAction('attack')">
+        <span class="action-icon">⚔️</span>공격
+        <span class="action-desc">기본 공격</span>
+      </button>
+      <button class="action-btn def" onclick="playerAction('defend')">
+        <span class="action-icon">🛡️</span>방어
+        <span class="action-desc">데미지 감소 + 에너지 충전</span>
+      </button>
+      <button class="action-btn sk" onclick="playerAction('skill')" id="btn-skill">
+        <span class="action-icon">✨</span>스킬
+        <span class="action-desc">특수 공격 (에너지 필요)</span>
+      </button>
+      <button class="action-btn ult" onclick="playerAction('ultimate')" id="btn-ultimate">
+        <span class="action-icon">💥</span>필살기
+        <span class="action-desc">강력한 일격 (에너지 필요)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- === RESULT SCREEN === -->
+  <div class="screen" id="screen-result">
+    <div class="result-screen">
+      <div class="result-icon" id="result-icon"></div>
+      <div class="result-title" id="result-title"></div>
+      <div class="result-score" id="result-score"></div>
+      <div class="result-facts" id="result-facts"></div>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="showScreen('screen-select')">다시 하기</button>
+        <button class="btn btn-primary" onclick="showScreen('screen-title')">메인으로</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Fact Popup -->
+<div class="fact-overlay" id="fact-overlay" onclick="closeFact()"></div>
+<div class="fact-popup" id="fact-popup">
+  <h3 id="fact-title"></h3>
+  <p id="fact-text"></p>
+  <div id="fact-tags"></div>
+  <br>
+  <button class="btn btn-secondary" onclick="closeFact()" style="width:100%;padding:12px;">계속하기</button>
+</div>
+
+<!-- Combo Display -->
+<div class="combo-display" id="combo-display"></div>
+
+<script>
+// ============= DATA =============
+const PLANETS = [
+  {
+    id: 'mercury', name: '수성', nameEn: 'Mercury',
+    class: 'planet-type: 지구형', cssClass: 'mercury-bg',
+    hp: 70, atk: 12, def: 5, spd: 15,
+    skillDmg: 18, ultDmg: 30,
+    desc: '태양에서 가장 가까운 행성. 표면 온도 변화가 극심합니다.',
+    facts: [
+      '수성은 태양에서 평균 5,790만 km 떨어져 있어 태양계에서 가장 가까운 행성입니다.',
+      '수성의 표면온도는 낮에는 430°C, 밤에는 -180°C까지 떨어집니다.',
+      '수성은 자전하는 데 58.6일, 공전하는 데 88일이 걸립니다.',
+      '수성에는 대기가 거의 없어 운석 충돌 흔적이 많이 남아 있습니다.',
+      '수성은 태양계 행성 중 가장 작습니다.'
+    ],
+    skillName: '태양 폭풍', ultName: ' 혜성 돌격'
+  },
+  {
+    id: 'venus', name: '금성', nameEn: 'Venus',
+    class: '행성 유형: 지구형', cssClass: 'venus-bg',
+    hp: 85, atk: 14, def: 10, spd: 10,
+    skillDmg: 22, ultDmg: 35,
+    desc: '두꺼운 대기로 둘러싸인 뜨거운 행성. "지구의 자매 행성"이라 불립니다.',
+    facts: [
+      '금성의 대기는 이산화소탄소가 대부분으로 온실 효과가 매우 강해 표면 온도가 약 462°C입니다.',
+      '금성은 다른 행성과 반대 방향으로 자전합니다 (역방향 공전).',
+      '금성은 지구와 크기가 비슷하여 "지구의 자매 행성"이라 불립니다.',
+      '금성의 대기는 자 sourceMappingURL 약 90배의 압력으로 지구 해저와 비슷합니다.',
+      '금성은 밝게 빛나 "샛별" 또는 "启明星"이라 불립니다.'
+    ],
+    skillName: '화산 폭발', ultName: ' 온실 폭풍'
+  },
+  {
+    id: 'earth', name: '지구', nameEn: 'Earth',
+    class: '행성 유형: 지구형', cssClass: 'earth-bg',
+    hp: 95, atk: 13, def: 12, spd: 11,
+    skillDmg: 20, ultDmg: 33,
+    desc: '생명이 존재하는 유일한 행성. 물이 액체 상태로 존재합니다.',
+    facts: [
+      '지구는 태양계에서 유일하게 액체 상태의 물이 존재하는 행성입니다.',
+      '지구의 대기 구성은 질소 78%, 산소 21%, 그 외 가스 1%입니다.',
+      '지구는 1년에 한 번 태양을 공전하고, 24시간에 한 번 자전합니다.',
+      '지구의 표면 약 71%는 바다로 덮여 있습니다.',
+      '지구의 위성인 달은 지구의 중력에 의해 끌려 태양계에서 5번째로 큰 위성입니다.',
+      '지구 자기장은 태양풍으로부터 지구를 보호하는 역할을 합니다.'
+    ],
+    skillName: '해일 공격', ultName: ' 대기 폭풍'
+  },
+  {
+    id: 'mars', name: '화성', nameEn: 'Mars',
+    class: '행성 유형: 지구형', cssClass: 'mars-bg',
+    hp: 80, atk: 16, def: 8, spd: 12,
+    skillDmg: 24, ultDmg: 36,
+    desc: '붉은 사막 행성. 두 개의 위성(フォボス, 디모스)을 가지고 있습니다.',
+    facts: [
+      '화성은 산화철(녹슨 철) 때문에 붉은색으로 보입니다.',
+      '화성에는 태양계에서 가장 큰 화산인 올림푸스 산(높이 약 22km)이 있습니다.',
+      '화성의 대기는 약 1% 수준으로 매우 희박합니다.',
+      '화성에는 두 개의 위성, 포보스와 데이모스가 있습니다.',
+      '화성의 하루(화성일)는 약 24시간 37분으로 지구와 비슷합니다.',
+      '현재 화성 탐사선이 여러 대가 탐사 중이며, 미래에 인간이 살 수 있는 행성으로 연구되고 있습니다.'
+    ],
+    skillName: '모래 폭풍', ultName: ' 올림푸스 산 대폭발'
+  },
+  {
+    id: 'jupiter', name: '목성', nameEn: 'Jupiter',
+    class: '행성 유형: 목성형', cssClass: 'jupiter-bg',
+    hp: 130, atk: 18, def: 14, spd: 7,
+    skillDmg: 26, ultDmg: 42,
+    desc: '태양계에서 가장 큰 행성. 대적점이 유명합니다.',
+    facts: [
+      '목성은 태양계에서 가장 큰 행성으로, 지구보다 약 11배 큽니다.',
+      '목성의 "대적점"은 반경 약 16,000km의 거대한 폭풍으로 수백 년 동안 지속됩니다.',
+      '목성은 가스로 이루어진 목성형 행성으로, 고체 표면이 없습니다.',
+      '목성은 현재까지 79개 이상의 위성을 보유하고 있습니다.',
+      '목성의 4대 위성(이오, 유로파, 가니메데, 카리스토)은 가릴레오 가릴레이가 발견했습니다.',
+      '목성은 태양계의 "방패" 역할을 하여 혜성 등의 충돌을 막아줍니다.'
+    ],
+    skillName: '대적점 폭풍', ultName: ' 목성의 분노'
+  },
+  {
+    id: 'saturn', name: '토성', nameEn: 'Saturn',
+    class: '행성 유형: 목성형', cssClass: 'saturn-bg',
+    hp: 115, atk: 16, def: 16, spd: 8,
+    skillDmg: 23, ultDmg: 38,
+    desc: '아름다운 고리로 유명한 행성. 물보다 가볍습니다.',
+    facts: [
+      '토성의 고리는 수십억 개의 얼음과 암석 조각으로 이루어져 있습니다.',
+      '토성은 물보다 가벼워서 물 위에 뜰 수 있을 정도의 밀도를 가지고 있습니다.',
+      '토성은 29.5년에 한 번 태양을 공전합니다.',
+      '토성의 위성 타이탄은 태양계에서 두 번째로 큰 위성으로, 대기가 있습니다.',
+      '토성의 고리는 두께가 약 10~100m 정도로 매우 얇습니다.',
+      '토성의 자전축 기울기는 약 26.7°로 지구와 비슷하여 계절 변화가 있습니다.'
+    ],
+    skillName: '고리 회전', ultName: ' 타이탄의 힘'
+  },
+  {
+    id: 'uranus', name: '천왕성', nameEn: 'Uranus',
+    class: '행성 유형: 목성형', cssClass: 'uranus-bg',
+    hp: 100, atk: 15, def: 13, spd: 9,
+    skillDmg: 21, ultDmg: 34,
+    desc: '옆으로 누워서 자전하는 특이한 행성. "얼음 거인"이라 불립니다.',
+    facts: [
+      '천왕성의 자전축 기울기는 약 98°로, 옆으로 누워서 자전합니다.',
+      '천왕성은 "얼음 거인"이라 불리며, 수소, 헬륨, 메탄 등으로 구성됩니다.',
+      '천왕성의 푸른 색은 대기 중 메탄이 빨간색 빛을 흡수하기 때문입니다.',
+      '천왕성은 1781년 윌리엄 허셜이 발견한 최초의 망원경 발견 행성입니다.',
+      '천왕성의 위성은 27개가 알려져 있으며, 셰익스피어와 드네이르의 작품에서 이름을 따왔습니다.',
+      '천왕성의 온도는 약 -224°C로 태양계에서 가장 추운 행성 중 하나입니다.'
+    ],
+    skillName: '얼음 폭풍', ultName: ' 뒤집힌 자전'
+  },
+  {
+    id: 'neptune', name: '해왕성', nameEn: 'Neptune',
+    class: '행성 유형: 목성형', cssClass: 'neptune-bg',
+    hp: 105, atk: 17, def: 11, spd: 10,
+    skillDmg: 25, ultDmg: 40,
+    desc: '태양계에서 가장 먼 행성. 강한 바람이 부는 얼음 거인입니다.',
+    facts: [
+      '해왕성은 태양계에서 가장 먼 행성으로, 태양에서 약 45억 km 떨어져 있습니다.',
+      '해왕성의 바람은 시속 2,100km로 태양계에서 가장 강한 바람이 붑니다.',
+      '해왕성은 수학적 예측을 통해 발견된 최초의 행성입니다 (1846년).',
+      '해왕성의 위성 트리톤은 역방향으로 공전하며, 혹성에서 잡아온 것으로 추정됩니다.',
+      '해왕성은 태양을 한 바도 도는 데 약 165년이 걸립니다.',
+      '해왕성도 메탄 때문에 푸른색을 띱니다.'
+    ],
+    skillName: '태풍 해일', ultName: ' 트리톤의 격랑'
+  }
+];
+
+const DWARF_PLANETS = [
+  {
+    id: 'pluto', name: '명왕성', nameEn: 'Pluto (왜소행성)',
+    cssClass: 'mercury-bg', hp: 50, atk: 8, def: 6, spd: 7,
+    desc: '2006년 IAU에서 왜소행성으로 재분류된 전 행성.',
+    facts: [
+      '명왕성은 2006년 국제천문연맹(IAU)에서 왜소행성으로 재분류되었습니다.',
+      '명왕성에는 하트 모양의 빈 Plains(상사平原)이 있습니다.',
+      '명왕성의 위성 카론은 명왕성의 절반 크기로, 둘이 서로 감싸며 공전합니다.',
+      '명왕성은 해왕성 궤도 안팎을 타원형으로 공전합니다.',
+      'NEW HORIZONS 탐사선이 2015년 명왕성을 처음으로 근접 탐사했습니다.'
+    ]
+  },
+  {
+    id: 'ceres', name: '세레스', nameEn: 'Ceres (왜소행성)',
+    cssClass: 'venus-bg', hp: 45, atk: 7, def: 5, spd: 8,
+    desc: '화성과 목성 사이 소행성대에 있는 왜소행성.',
+    facts: [
+      '세레스는 화성과 목성 사이 소행성대에 있는 가장 큰 천체입니다.',
+      '세레스는 태양계에서 가장 가까이 있는 왜소행성입니다.',
+      'DAWN 탐사선이 2015년 세레스 궤도에 진입하여 탐사했습니다.',
+      '세레스 표면에서 밝은 점들이 발견되었으며, 이는 소금(탄산나트륨)으로 알려져 있습니다.',
+      '세레스는 직경 약 950km로, 왜소행성 중에서 가장 큽니다.'
+    ]
+  }
+];
+
+const ENEMIES = [
+  ...DWARF_PLANETS.map(d => ({...d, type: '왜소행성', skillName: '운석 난사', ultName: ' 소행성 폭풍'})),
+  ...PLANETS.filter(p => p.id !== 'earth').map(p => ({...p, type: '행성'})),
+  { id: 'comet', name: '혜성', nameEn: 'Comet', cssClass: 'uranus-bg', hp: 40, atk: 20, def: 3, spd: 18,
+    skillName: '꼬리 공격', ultName: ' 대혜성 충돌', type: '혜성',
+    facts: ['혜성은 얼음과 먼지로 이루어진 "더러운 눈덩이"라 불립니다.',
+            '혜성이 태양에 가까워지면 꼬리가 생깁니다.',
+            '퍼지 혜성은 약 76년에 한 번 태양에 가까워집니다.'] },
+  { id: 'asteroid', name: '소행성', nameEn: 'Asteroid', cssClass: 'mars-bg', hp: 35, atk: 14, def: 4, spd: 16,
+    skillName: '운석 파편', ultName: ' 대충돌', type: '소행성',
+    facts: ['소행성 대부분은 화성과 목성 사이의 소행성대에 있습니다.',
+            '세레스는 소행성대에서 가장 큰 소행성(왜소행성)입니다.',
+            ' Tử구 6500만 년 전 소행성 충멸이 공룡을 멸종시켰습니다.'] },
+  { id: 'sun_enemy', name: '태양', nameEn: 'The Sun (항성)', cssClass: 'venus-bg', hp: 150, atk: 22, def: 8, spd: 6,
+    skillName: '태양 플레어', ultName: ' 코로나 대폭발', type: '항성',
+    facts: ['태양은 태양계의 중심에 있는 별(항성)입니다.',
+            '태양의 온도는 표면 약 5,500°C, 핵은 약 1,500만 °C입니다.',
+            '태양은 수소를 헬륨으로 핵융합하여 빛과 열을 방출합니다.',
+            '태양은 지구에서 약 1억 5천만 km 떨어져 있습니다 (1AU).',
+            '태양 빛이 지구까지 오는 데 약 8분 20초가 걸립니다.',
+            '태양의 수명은 약 100억 년이며, 현재 약 46억 년을 살았습니다.'] }
+];
+
+const ENEMY_ORDER = [
+  { id: 'asteroid', rounds: 1 },
+  { id: 'ceres', rounds: 2 },
+  { id: 'comet', rounds: 3 },
+  { id: 'mercury', rounds: 4 },
+  { id: 'venus', rounds: 5 },
+  { id: 'mars', rounds: 6 },
+  { id: 'jupiter', rounds: 7 },
+  { id: 'saturn', rounds: 8 },
+  { id: 'uranus', rounds: 9 },
+  { id: 'neptune', rounds: 10 },
+  { id: 'pluto', rounds: 11 },
+  { id: 'sun_enemy', rounds: 12 }
+];
+
+const STAGES = [
+  '소행성대 입구', '소행성대', '혜성의 꼬리',
+  '수성 궤도', '금성 궤도', '화성 궤도',
+  '목성 궤도', '토성 궤도', '천왕성 궤도',
+  '해왕성 궤도', '카이퍼 벨트', '태양핵'
+];
+
+// ============= GAME STATE =============
+let gameState = {
+  player: null,
+  enemy: null,
+  playerHp: 0,
+  enemyHp: 0,
+  playerMaxHp: 0,
+  enemyMaxHp: 0,
+  energy: 0,
+  maxEnergy: 100,
+  round: 1,
+  maxRounds: 12,
+  defending: false,
+  difficulty: 'easy',
+  score: 0,
+  factsLearned: [],
+  isPlayerTurn: true,
+  combo: 0,
+  gameActive: false
+};
+
+const DIFF_MOD = { easy: { enemyAtk: 0.6, enemyHp: 0.7, enemyDef: 0.5 }, normal: { enemyAtk: 0.85, enemyHp: 0.85, enemyDef: 0.75 }, hard: { enemyAtk: 1, enemyHp: 1, enemyDef: 1 } };
+
+// ============= INIT =============
+function init() {
+  drawStars();
+  renderPlanetGrid();
+}
+
+// ============= STARS =============
+function drawStars() {
+  const canvas = document.getElementById('stars-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const stars = [];
+  for (let i = 0; i < 300; i++) {
+    stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, r: Math.random() * 1.5 + 0.3, speed: Math.random() * 0.3 + 0.05, alpha: Math.random(), da: Math.random() * 0.02 + 0.005 });
+  }
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      s.alpha += s.da;
+      if (s.alpha > 1 || s.alpha < 0.2) s.da *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+      ctx.fill();
+      s.y -= s.speed;
+      if (s.y < -5) { s.y = canvas.height + 5; s.x = Math.random() * canvas.width; }
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+  window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+}
+
+// ============= SCREENS =============
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ============= PLANET GRID =============
+function renderPlanetGrid() {
+  const grid = document.getElementById('planets-grid');
+  grid.innerHTML = '';
+  PLANETS.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'planet-card';
+    card.innerHTML = `
+      <div class="planet-sphere ${p.cssClass}" style="animation-delay:${Math.random()*2}s">
+        ${p.id === 'saturn' ? '<div class="saturn-ring"></div>' : ''}
+      </div>
+      <div class="planet-name">${p.name}</div>
+      <div class="planet-name-en">${p.nameEn}</div>
+      <div class="planet-stats">
+        HP ${p.hp} | ATK ${p.atk} | DEF ${p.def}
+        <div class="stat-bar"><div class="stat-fill" style="width:${p.hp/130*100}%;background:linear-gradient(90deg,#00ff88,#00f0ff)"></div></div>
+      </div>
+    `;
+    card.onclick = () => selectPlanet(p, card);
+    grid.appendChild(card);
+  });
+}
+
+function selectPlanet(planet, card) {
+  document.querySelectorAll('.planet-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  gameState.player = planet;
+
+  const info = document.getElementById('select-info');
+  info.className = 'info-panel show';
+  info.innerHTML = `
+    <h3>${planet.name} (${planet.nameEn})</h3>
+    <p>${planet.desc}</p>
+    <div class="planet-stats" style="margin-top:12px;">
+      HP ${planet.hp} | 공격력 ${planet.atk} | 방어력 ${planet.def} | 속성 ${planet.spd}
+    </div>
+    <div style="margin-top:8px;">
+      <span class="fact-tag">스킬: ${planet.skillName}</span>
+      <span class="fact-tag">필살기: ${planet.ultName}</span>
+      <span class="fact-tag">${planet.class}</span>
+    </div>
+  `;
+
+  document.getElementById('btn-start-battle').disabled = false;
+}
+
+function setDifficulty(diff, btn) {
+  gameState.difficulty = diff;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ============= BATTLE =============
+function startBattle() {
+  if (!gameState.player) return;
+  gameState.round = 1;
+  gameState.score = 0;
+  gameState.factsLearned = [];
+  gameState.gameActive = true;
+  loadRound();
+  showScreen('screen-battle');
+}
+
+function getEnemyForRound(round) {
+  const entry = ENEMY_ORDER.find(e => e.rounds === round);
+  if (!entry) return ENEMIES[Math.floor(Math.random() * ENEMIES.length)];
+  let enemy = ENEMIES.find(e => e.id === entry.id);
+  return enemy ? {...enemy} : ENEMIES[0];
+}
+
+function loadRound() {
+  const enemy = getEnemyForRound(gameState.round);
+  const mod = DIFF_MOD[gameState.difficulty];
+
+  gameState.enemy = enemy;
+  gameState.enemyHp = Math.round(enemy.hp * mod.enemyHp);
+  gameState.enemyMaxHp = gameState.enemyHp;
+  gameState.playerHp = gameState.player.hp;
+  gameState.playerMaxHp = gameState.player.hp;
+  gameState.energy = 0;
+  gameState.defending = false;
+  gameState.isPlayerTurn = true;
+  gameState.combo = 0;
+
+  document.getElementById('battle-round').textContent = `ROUND ${gameState.round}`;
+  document.getElementById('battle-stage').textContent = STAGES[gameState.round - 1] || '태양계';
+  document.getElementById('player-name').textContent = gameState.player.name;
+  document.getElementById('enemy-name').textContent = enemy.name;
+
+  // Visuals
+  const pVis = document.getElementById('player-planet-visual');
+  const eVis = document.getElementById('enemy-planet-visual');
+  pVis.className = `fighter-planet ${gameState.player.cssClass}`;
+  pVis.style.cssText = '';
+  if (gameState.player.id === 'saturn') pVis.innerHTML = '<div class="saturn-ring"></div>';
+
+  eVis.className = `fighter-planet ${enemy.cssClass}`;
+  eVis.style.cssText = '';
+  if (enemy.id === 'saturn') eVis.innerHTML = '<div class="saturn-ring"></div>';
+
+  document.getElementById('player-fighter-name').textContent = gameState.player.name;
+  document.getElementById('player-fighter-type').textContent = gameState.player.class;
+  document.getElementById('enemy-fighter-name').textContent = enemy.name;
+  document.getElementById('enemy-fighter-type').textContent = enemy.type || '천체';
+
+  updateHPBars();
+  clearLog();
+  addLog('info', `${STAGES[gameState.round-1]}에 진입합니다!`);
+  addLog('info', `${enemy.name}이(가) 나타났다!`);
+  enableActions(true);
+  updateEnergyButtons();
+}
+
+function updateHPBars() {
+  const pPct = Math.max(0, gameState.playerHp / gameState.playerMaxHp * 100);
+  const ePct = Math.max(0, gameState.enemyHp / gameState.enemyMaxHp * 100);
+  document.getElementById('player-hp-bar').style.width = pPct + '%';
+  document.getElementById('enemy-hp-bar').style.width = ePct + '%';
+  document.getElementById('player-hp-num').textContent = `${Math.max(0,gameState.playerHp)}/${gameState.playerMaxHp}`;
+  document.getElementById('enemy-hp-num').textContent = `${Math.max(0,gameState.enemyHp)}/${gameState.enemyMaxHp}`;
+
+  document.getElementById('player-energy-bar').style.width = (gameState.energy / gameState.maxEnergy * 100) + '%';
+
+  let pStatus = '';
+  if (gameState.defending) pStatus = '🛡️ 방어 중';
+  document.getElementById('player-status').textContent = pStatus;
+
+  updateEnergyButtons();
+}
+
+function updateEnergyButtons() {
+  const skillBtn = document.getElementById('btn-skill');
+  const ultBtn = document.getElementById('btn-ultimate');
+  skillBtn.disabled = gameState.energy < 30;
+  ultBtn.disabled = gameState.energy < 70;
+}
+
+function enableActions(enabled) {
+  gameState.isPlayerTurn = enabled;
+  document.querySelectorAll('.action-btn').forEach(b => b.disabled = !enabled);
+  updateEnergyButtons();
+}
+
+function playerAction(type) {
+  if (!gameState.isPlayerTurn || !gameState.gameActive) return;
+  enableActions(false);
+
+  const p = gameState.player;
+  const e = gameState.enemy;
+  const mod = DIFF_MOD[gameState.difficulty];
+
+  gameState.defending = false;
+
+  if (type === 'attack') {
+    const dmg = calcDmg(p.atk, e.def * mod.enemyDef);
+    gameState.enemyHp -= dmg;
+    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 12);
+    animateAttack('player');
+    addLog('damage', `${p.name}의 공격! ${dmg} 데미지!`);
+    showCombo(1);
+  } else if (type === 'defend') {
+    gameState.defending = true;
+    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 25);
+    addLog('info', `${p.name}이(가) 방어 태세를 취합니다! 에너지 +25`);
+  } else if (type === 'skill') {
+    if (gameState.energy < 30) { addLog('info', '에너지가 부족합니다!'); enableActions(true); return; }
+    gameState.energy -= 30;
+    const dmg = calcDmg(p.skillDmg + p.atk * 0.5, e.def * mod.enemyDef * 0.7);
+    gameState.enemyHp -= dmg;
+    gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + 15);
+    animateAttack('player');
+    addLog('skill', `✨ ${p.skillName}! ${dmg} 데미지!`);
+    showCombo(2);
+  } else if (type === 'ultimate') {
+    if (gameState.energy < 70) { addLog('info', '에너지가 부족합니다!'); enableActions(true); return; }
+    gameState.energy -= 70;
+    const dmg = calcDmg(p.ultDmg + p.atk, e.def * mod.enemyDef * 0.5);
+    gameState.enemyHp -= dmg;
+    gameState.score += 50;
+    animateAttack('player');
+    addLog('skill', `💥 ${p.ultName}!! ${dmg} 데미지!`);
+    showCombo(3);
+    setTimeout(() => {
+      const fact = p.facts[Math.floor(Math.random() * p.facts.length)];
+      showFact(p.name + '의 비밀', fact, [p.name, p.class]);
+      if (!gameState.factsLearned.includes(fact)) gameState.factsLearned.push(fact);
+    }, 500);
+  }
+
+  updateHPBars();
+
+  if (gameState.enemyHp <= 0) {
+    gameState.enemyHp = 0;
+    updateHPBars();
+    setTimeout(() => roundWin(), 800);
+    return;
+  }
+
+  setTimeout(() => enemyTurn(), 1000);
+}
+
+function enemyTurn() {
+  if (!gameState.gameActive) return;
+  const e = gameState.enemy;
+  const p = gameState.player;
+  const mod = DIFF_MOD[gameState.difficulty];
+
+  // Enemy AI
+  let action = 'attack';
+  if (e.hp < e.hp * 0.3 && Math.random() < 0.4) action = 'skill';
+  else if (Math.random() < 0.2) action = 'skill';
+  else if (Math.random() < 0.1) action = 'ultimate';
+
+  let dmg = 0;
+  if (action === 'attack') {
+    dmg = calcDmg(e.atk * mod.enemyAtk, p.def);
+    if (gameState.defending) dmg = Math.round(dmg * 0.5);
+    gameState.playerHp -= dmg;
+    animateAttack('enemy');
+    addLog('damage', `${e.name}의 공격! ${dmg} 데미지!`);
+  } else if (action === 'skill') {
+    dmg = calcDmg((e.skillDmg || e.atk * 1.5) * mod.enemyAtk, p.def * 0.8);
+    if (gameState.defending) dmg = Math.round(dmg * 0.5);
+    gameState.playerHp -= dmg;
+    animateAttack('enemy');
+    addLog('skill', `${e.skillName || '특수 공격'}! ${dmg} 데미지!`);
+  } else {
+    dmg = calcDmg((e.ultDmg || e.atk * 2) * mod.enemyAtk, p.def * 0.6);
+    if (gameState.defending) dmg = Math.round(dmg * 0.5);
+    gameState.playerHp -= dmg;
+    animateAttack('enemy');
+    addLog('skill', `${e.ultName || '필살기'}!! ${dmg} 데미지!`);
+  }
+
+  if (gameState.defending) {
+    addLog('info', '🛡️ 방어로 데미지가 감소했습니다!');
+  }
+
+  // Show enemy fact sometimes
+  if (action !== 'attack' && e.facts && Math.random() < 0.4) {
+    const fact = e.facts[Math.floor(Math.random() * e.facts.length)];
+    addLog('fact', `📚 ${fact}`);
+    if (!gameState.factsLearned.includes(fact)) gameState.factsLearned.push(fact);
+  }
+
+  updateHPBars();
+
+  if (gameState.playerHp <= 0) {
+    gameState.playerHp = 0;
+    updateHPBars();
+    setTimeout(() => roundLose(), 800);
+    return;
+  }
+
+  setTimeout(() => enableActions(true), 600);
+}
+
+function calcDmg(atk, def) {
+  const base = Math.max(1, atk - def * 0.5);
+  const variance = Math.random() * 0.4 - 0.2;
+  return Math.max(1, Math.round(base * (1 + variance)));
+}
+
+function animateAttack(who) {
+  const vis = who === 'player' ? document.getElementById('player-planet-visual') : document.getElementById('enemy-planet-visual');
+  const target = who === 'player' ? document.getElementById('enemy-planet-visual') : document.getElementById('player-planet-visual');
+  vis.classList.add('attack');
+  setTimeout(() => { vis.classList.remove('attack'); target.classList.add('damage'); }, 200);
+  setTimeout(() => target.classList.remove('damage'), 500);
+}
+
+function showCombo(level) {
+  gameState.combo++;
+  if (gameState.combo >= 2) {
+    const el = document.getElementById('combo-display');
+    el.textContent = `${gameState.combo} COMBO!`;
+    el.style.display = 'block';
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = 'comboAnim 1s ease forwards';
+    setTimeout(() => el.style.display = 'none', 1000);
+    gameState.score += gameState.combo * 10;
+  }
+}
+
+function roundWin() {
+  gameState.score += 100 + gameState.round * 20;
+  gameState.combo = 0;
+
+  if (gameState.round >= gameState.maxRounds) {
+    // Game complete!
+    showResult(true);
+  } else {
+    // Show enemy fact before next round
+    const enemy = gameState.enemy;
+    if (enemy.facts && enemy.facts.length > 0) {
+      const fact = enemy.facts[Math.floor(Math.random() * enemy.facts.length)];
+      showFact(enemy.name + ' 격파!', `승리 보상: ${fact}`, [enemy.name, '전투 결과']);
+      if (!gameState.factsLearned.includes(fact)) gameState.factsLearned.push(fact);
+    }
+    gameState.round++;
+    setTimeout(() => loadRound(), 2500);
+  }
+}
+
+function roundLose() {
+  showResult(false);
+}
+
+function showResult(won) {
+  gameState.gameActive = false;
+  showScreen('screen-result');
+
+  document.getElementById('result-icon').textContent = won ? '🏆' : '💫';
+  const titleEl = document.getElementById('result-title');
+  titleEl.textContent = won ? '승리! 태양계 정복!' : '패배...';
+  titleEl.className = 'result-title ' + (won ? 'win' : 'lose');
+  document.getElementById('result-score').textContent = `최종 점수: ${gameState.score}점 | 라운드: ${gameState.round}/${gameState.maxRounds}`;
+
+  const factsDiv = document.getElementById('result-facts');
+  let html = '<h3>배운 과학 지식</h3>';
+  if (gameState.factsLearned.length === 0) {
+    html += '<div class="result-fact-item">다음에 다시 도전하여 더 많은 사실을 배워보세요!</div>';
+  } else {
+    gameState.factsLearned.forEach((f, i) => {
+      html += `<div class="result-fact-item"><strong>${i+1}.</strong> ${f}</div>`;
+    });
+  }
+  factsDiv.innerHTML = html;
+}
+
+// ============= LOG =============
+function addLog(type, text) {
+  const log = document.getElementById('battle-log');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry log-' + type;
+  entry.textContent = text;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('battle-log').innerHTML = '';
+}
+
+// ============= FACT POPUP =============
+function showFact(title, text, tags) {
+  document.getElementById('fact-title').textContent = '🌟 ' + title;
+  document.getElementById('fact-text').textContent = text;
+  const tagsDiv = document.getElementById('fact-tags');
+  tagsDiv.innerHTML = '';
+  if (tags) tags.forEach(t => {
+    const tag = document.createElement('span');
+    tag.className = 'fact-tag';
+    tag.textContent = t;
+    tagsDiv.appendChild(tag);
+  });
+  document.getElementById('fact-overlay').classList.add('show');
+  document.getElementById('fact-popup').classList.add('show');
+}
+
+function closeFact() {
+  document.getElementById('fact-overlay').classList.remove('show');
+  document.getElementById('fact-popup').classList.remove('show');
+}
+
+// ============= START =============
+init();
+</script>
+</body>
+</html>
